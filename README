@@ -1,0 +1,121 @@
+OpenNMS Configuration Tools v0.0.2
+
+WARNING: those configuration tools are on an alpha stage, don't use them on 
+production environment. No really, don't!
+
+They have been written to allow an easier and faster integration of OpenNMS on a
+small organisation with only some simple tasks to do. OpenNMS is much more than
+that and those tools covers only a small part of what it can do. One can think
+of them as something who simplify the first steps of OpenNMS integration.
+
+Tested on Debian 5.0 Lenny and Centos 5.4.
+
+
+[install.py]
+This tool automates the installation of OpenNMS for Debian and RedHat based
+distributions. Optionaly one can chose between the stable and developement 
+version, see "install.py --help" for usage details.
+It takes the following steps:
+    1. Determination of the current distribution
+    2. Warn if a previous version have been detected
+    3. Add OpenNMS packages repository
+        3.1. Sign the repository on Debian
+    4. Installation of OpenNMS packages and his dependencies
+        4.1. Let PostgreSQL populating his configuration directory on RedHat
+        4.2 Modification of PostgreSQL's configuration for OpenNMS
+    5. Creation of OpenNMS database
+    6. Installation of IPLike
+    7. Configuration of Java Runtime Environment
+    8. Installation of OpenNMS
+
+
+[config.py]
+This tool is one of the main reason for creating this suite. The configuration
+of OpenNMS must be the result of a discution concerning the ojectives of the 
+monitoring plateform, especialy for the following points:
+    * Who are the users of such plateform and what are their roles and 
+      credentials?
+    * What are the IP addresses of the network equipments we want to monitor?
+    * What are the credentials needed by some protocols to access those 
+      equipments?
+    * Is there are specific tasks we want to do with the help of some plugins?
+
+All those rules are summarized on a manifest file named [config_rules.py] which
+is used by this tool to automate the configuration of OpenNMS.
+"config.py --save" will apply a configuration and "config.py --remove" will
+remove the plugin listed in [config_rules.py].
+
+WARNING: allways run "backup.py" before any changes and be aware that 
+"config.py --remove" will only work if the plugin files have not been changed.
+
+A standard usage should takes the following steps:
+    1. Execution of "backup.py"
+    2. Execution of "config.py --remove"
+    3. Modification of [config_rules.py] and/or [plugin/*.py]
+    4. Execution of "config.py --save"
+
+The purpose of that tool is to facilitate the upgrade process.
+
+
+[plugin/plugin.py]
+This file is called by [config.py] for activating or desactivating each plugin
+designed by [config_rules.py]. It makes [config.py] very usefull when you want
+to easily keep track of all the modifications you've done tho OpenNMS 
+configuration files. 
+
+
+[config_rules.py]
+This file is a manifest of OpenNMS configuration, see [config.py].
+
+
+[plugin/apache.py]
+An integration example for Apache HTTPd Server, it contains all the 
+modifications that must be done to OpenNMS configuration file.
+
+
+[plugin/nginx.py]
+Same thing for Nginx HTTPd Server.
+
+
+[backup.py]
+This tool archives OpenNMS configuration files and all his other files too 
+but the logs files into an unique sub-directory of a given directory. It also 
+dump the database in it.
+
+
+[restore.py]
+This tool is the counterpart of [restore.py]. It will overwrite the current
+configuration state with the previous state stored in the given unique 
+sub-directory where it has been saved by [backup.py].
+
+
+[test.py]
+This tool contains a list of test cases to see if OpenNMS is on a consistent
+state. Those are the following:
+    1. OpenNMS packages and his dependencies are installed on the system
+    2. IPLike and PostgreSQL Server are version compatible
+    3. OpenNMS is running
+    4. PostgreSQL Server is running
+    5. The plugins' tools are installed
+
+This tool also contains some regression tests to check if nothing have changed
+between the current state and the given previous one. A state can be saved at 
+any time by running "test.py --save". The regression tests are 
+the following:
+    1. Nodes seen within the Web GUI
+    2. Interfaces seen within the Web GUI
+    3. Users seen within the Web GUI
+    4. Groups seen within the Web GUI
+    5. Nodes seen within the database
+    6. Interfaces seen within the database
+    7. Users declared in the XML files
+    8. Groups declared in the XML files
+
+
+[lib/distrib.py]
+This library contains some functions with peculiar code for each distribution.
+
+
+[lib/system.py]
+This library contains some (ugly) functions to wrap some specific interactions
+with the system done by the tools.
