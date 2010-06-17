@@ -616,13 +616,152 @@ class Capabilities(XMLConfig):
         prop("compareValue", "OK")
         prop("service-name", "WMI")
 
+class Authentification(XMLConfig):
+
+    def duplicate_role(self, old, new):
+        """
+        Add new role everywhere old role is defined.
+        """
+        assert old != new
+        for url in self._doc.getElementsByTagName("intercept-url"):
+            access = url.getAttribute("access")
+            if not new in access.split(",") and old in access.split(","):
+                url.setAttribute("access", "%s,%s" % (access, new))
+
+    def _remove_previous_bean(self, attr):
+        """
+        Remote any previous LDAP configuration.
+        """
+        for bean in self._doc.getElementsByTagName("beans:bean"):
+            if bean.getAttribute("id") == attr:
+                bean.parentNode.removeChild(bean)
+
+    def _add_bean(self, attr_id, attr_class):
+        """
+        Add a bean to the configuration and return it.
+        """
+        self._remove_previous_bean(attr_id)
+        bean = self._doc.createElement("beans:bean")
+        self._config.appendChild(bean)
+        bean.setAttribute("id", attr_id)
+        bean.setAttribute("class", attr_class)
+        return bean
+
+    def enable_ldap(self, address, port, domain, search_user, search_password,
+                    user_filter, role_filter, auth_filter, default_role):
+        """
+        Enable LDAP authentification with the following parameters:
+            address:            LDAP server's address
+            port:               LDAP server's port
+            domain:             LDAP Domain (ex: dc=example,dc=com)
+            search_user:        Username executing the query
+            search_password:    Password for this username
+            user_filter:        Limit the user's search on a subtree
+            role_filter:        Limit the role's search on a subtree
+            auth_filter:        Attribute used to perform authentification
+            default_role:       Default role given to LDAP users
+        """
+
+        sping = "org.springframework.security."
+
+        context_source = self._add_bean(
+            "contextSource",
+            sping + "ldap.DefaultSpringSecurityContextSource")
+        cons = self._doc.createElement("beans:constructor-arg")
+        context_source.appendChild(cons)
+        cons.setAttribute("value", "ldap://%s:%s/%s" % (address, port, domain))
+        prop = self._doc.createElement("beans:property")
+        context_source.appendChild(prop)
+        prop.setAttribute("name", "userDn")
+        prop.setAttribute("value", search_user)
+        prop = self._doc.createElement("beans:property")
+        context_source.appendChild(prop)
+        prop.setAttribute("name", "password")
+        prop.setAttribute("value", search_password)
+
+        ldap_auth_provider = self._add_bean(
+            "ldapAuthProvider",
+            sping + "providers.ldap.LdapAuthenticationProvider")
+        cust = self._doc.createElement("custom-authentication-provider")
+        ldap_auth_provider.appendChild(cust)
+        cons = self._doc.createElement("beans:constructor-arg")
+        ldap_auth_provider.appendChild(cons)
+        cons.setAttribute("ref", "ldapAuthenticator")
+        cons = self._doc.createElement("beans:constructor-arg")
+        ldap_auth_provider.appendChild(cons)
+        cons.setAttribute("ref", "ldapAuthoritiesPopulator")
+
+        ldap_auth = self._add_bean(
+            "ldapAuthenticator",
+            sping + "providers.ldap.authenticator.BindAuthenticator")
+        cons = self._doc.createElement("beans:constructor-arg")
+        ldap_auth.appendChild(cons)
+        cons.setAttribute("ref", "contextSource")
+        prop = self._doc.createElement("beans:property")
+        ldap_auth.appendChild(prop)
+        prop.setAttribute("name", "userSearch")
+        prop.setAttribute("ref", "userSearch")
+
+        user_search = self._add_bean(
+            "userSearch",
+            sping + "ldap.search.FilterBasedLdapUserSearch")
+        cons = self._doc.createElement("beans:constructor-arg")
+        user_search.appendChild(cons)
+        cons.setAttribute("index", "0")
+        cons.setAttribute("value", user_filter)
+        cons = self._doc.createElement("beans:constructor-arg")
+        user_search.appendChild(cons)
+        cons.setAttribute("index", "1")
+        cons.setAttribute("value", "(%s={0})" % auth_filter)
+        cons = self._doc.createElement("beans:constructor-arg")
+        user_search.appendChild(cons)
+        cons.setAttribute("index","2" )
+        cons.setAttribute("ref", "contextSource")
+        prop = self._doc.createElement("beans:property")
+        user_search.appendChild(prop)
+        prop.setAttribute("name", "searchSubtree")
+        prop.setAttribute("value", "true")
+
+        ldap_auth_populator = self._add_bean(
+            "ldapAuthoritiesPopulator",
+            sping + "ldap.populator.DefaultLdapAuthoritiesPopulator")
+        cons = self._doc.createElement("beans:constructor-arg")
+        ldap_auth_populator.appendChild(cons)
+        cons.setAttribute("ref", "contextSource")
+        cons = self._doc.createElement("beans:constructor-arg")
+        ldap_auth_populator.appendChild(cons)
+        cons.setAttribute("value", role_filter)
+        prop = self._doc.createElement("beans:property")
+        ldap_auth_populator.appendChild(prop)
+        prop.setAttribute("name", "groupRoleAttribute")
+        prop.setAttribute("value", "cn")
+        prop = self._doc.createElement("beans:property")
+        ldap_auth_populator.appendChild(prop)
+        prop.setAttribute("name", "groupSearchFilter")
+        prop.setAttribute("value", "(member={0})")
+        prop = self._doc.createElement("beans:property")
+        ldap_auth_populator.appendChild(prop)
+        prop.setAttribute("name", "searchSubtree")
+        prop.setAttribute("value", "true")
+        prop = self._doc.createElement("beans:property")
+        ldap_auth_populator.appendChild(prop)
+        prop.setAttribute("name", "rolePrefix")
+        prop.setAttribute("value", "")
+        prop = self._doc.createElement("beans:property")
+        ldap_auth_populator.appendChild(prop)
+        prop.setAttribute("name", "convertToUpperCase")
+        prop.setAttribute("value", "true")
+        prop = self._doc.createElement("beans:property")
+        ldap_auth_populator.appendChild(prop)
+        prop.setAttribute("name", "defaultRole")
+        prop.setAttribute("value", default_role)
+
 
 ##########################################
 #             Main Function              #
 ##########################################
 
 def main():
-
 
     ##########################################
     #            Parse arguments             #
@@ -725,19 +864,34 @@ def main():
         "capabilities": "capsd-configuration.xml",
         "snmp_credentials": "snmp-config.xml",
         "wmi_credentials": "wmi-config.xml",
+        "authentification": "applicationContext-spring-security.xml"
     }
+
+    ldap_vars = [
+        "LDAP_ADDRESS", "LDAP_PORT", "LDAP_USERNAME", "LDAP_PASSWORD",
+        "LDAP_USERS_KEYS", "LDAP_USERS_GROUP",
+        "LDAP_USERS_PASSWORD", "LDAP_USERS_READ_ONLY",
+        "LDAP_DOMAIN", "LDAP_FILTER_USER", "LDAP_FILTER_ROLE",
+    ]
+    is_def = lambda conf, var: hasattr(conf, str(var))
+    is_ldap_enabled = lambda c: not False in [is_def(c, v) for v in ldap_vars]
+
     # Apply modifications listed in 'config_rules.py'
     print "#" * 80
     print "Loading modifications listed in 'config_rules.py' ..."
     for key in xml_config_files.keys():
+
         # Instanciate configuration object
-        config_file = "%s/%s" % (options.configuration_path,
-                                 xml_config_files[key])
+        path = "%s/jetty-webapps/opennms/WEB-INF" % params.opennms_path \
+            if key == "authentification" else options.configuration_path
+        config_file = "%s/%s" % (path, xml_config_files[key])
         if options.verbosity > 0:
             print "Editing '%s' ..." % config_file
-        root_name = xml_config_files[key].split(".")[0]
+        root_name = "beans:beans" if key == "authentification" \
+                            else xml_config_files[key].split(".")[0]
         config = globals()[key.title().replace("_", "")](config_file, root_name)
         config.verbosity = options.verbosity
+
         # Call its methods for specifics elements defined in 'config_rules.py'
         if key in ["users", "groups", "roles", "snmp_credentials",
                    "wmi_credentials"]:
@@ -752,10 +906,63 @@ def main():
             else:
                 config.overwrite = False
 
+            # Get LDAP USERS
+            ldap_group = None
+            ldap_group_users = list()
+            if key in ("users", "groups") and is_ldap_enabled(config_rules):
+                   try:
+                       import ldap
+                   except ImportError:
+                       sys.exit("Error: You must have 'python-ldap' on your system!")
+                   ldap_address = getattr(config_rules, "LDAP_ADDRESS")
+                   ldap_port = getattr(config_rules, "LDAP_PORT")
+                   ldap_username = getattr(config_rules, "LDAP_USERNAME")
+                   ldap_password = getattr(config_rules, "LDAP_PASSWORD")
+                   ldap_domain = getattr(config_rules, "LDAP_DOMAIN")
+                   filter_user = getattr(config_rules, "LDAP_FILTER_USER")
+                   items = getattr(config_rules, "LDAP_USERS_KEYS")
+                   ldap_group = getattr(config_rules, "LDAP_USERS_GROUP")
+                   l = ldap.initialize('ldap://%s:%s' % (ldap_address,
+                                       ldap_port))
+                   l.bind(ldap_username, ldap_password)
+                   r = l.search_s("%s,%s" % (filter_user, ldap_domain), ldap.SCOPE_SUBTREE,
+                                  '(objectClass=*)', items.values())
+                   l.unbind()
+                   handle = lambda entry, k: \
+                       entry[k][0] if k in entry and len(entry[k]) == 1 \
+                       else None
+                   for dn, entry in r:
+                       elem = dict()
+                       is_full_account = True
+                       for k, v in items.items():
+                           obj = handle(entry, v)
+                           if obj is not None:
+                               elem[k] = obj
+                           else:
+                               is_full_account = False
+                       if is_full_account:
+                           # If we've got all we need, create the user
+                           if key == "users":
+                               if options.verbosity > 1:
+                                   print "\tFound LDAP user '%s' ..." \
+                                         % elem['uid']
+                               elem['pwd'] = getattr(config_rules,
+                                                   "LDAP_USERS_PASSWORD")
+                               elem['ro'] = getattr(config_rules,
+                                                   "LDAP_USERS_READ_ONLY")
+                               config.add(**elem)
+                           elif key == "groups":
+                               # Populate the ldap default group
+                               ldap_group_users.append(elem['uid'])
 
+            # Add elements to the XML configuration
             if hasattr(config_rules, key.upper()):
                 for elem in getattr(config_rules, key.upper()):
+                    if key == "groups" and ldap_group is not None and \
+                       elem['name'] == ldap_group:
+                           elem['users'].extend(ldap_group_users)
                     config.add(**elem)
+
         elif key == "notification":
             config.status = getattr(config_rules, key.upper())
         elif key == "collector":
@@ -771,6 +978,33 @@ def main():
                 if hasattr(config_rules, config_param):
                     for elem in getattr(config_rules, config_param):
                         getattr(config, action.split("_")[0])(**elem)
+        elif key == "authentification" and is_ldap_enabled(config_rules):
+            ldap_address = getattr(config_rules, "LDAP_ADDRESS")
+            ldap_port = getattr(config_rules, "LDAP_PORT")
+            ldap_username = getattr(config_rules, "LDAP_USERNAME")
+            ldap_password = getattr(config_rules, "LDAP_PASSWORD")
+            ldap_domain = getattr(config_rules, "LDAP_DOMAIN")
+            filter_user = getattr(config_rules, "LDAP_FILTER_USER")
+            filter_role = getattr(config_rules, "LDAP_FILTER_ROLE")
+            ldap_group = getattr(config_rules, "LDAP_USERS_GROUP")
+            items = getattr(config_rules, "LDAP_USERS_KEYS")
+            # Find default role from default group
+            if hasattr(config_rules, "GROUPS"):
+                groups = getattr(config_rules, "GROUPS")
+                levels = [group["level"] for group in groups
+                          if "level" in group and group["name"] == ldap_group]
+                role = "ROLE_USER"
+                if len(levels) == 1 and int(levels[0]) == 3:
+                    role = "ROLE_ADMIN"
+                    # We can only assign one default role, but an admin need
+                    # ROLE_ADMIN *and* ROLE_USER so we have to duplicate
+                    # ROLE_USER permission to ROLE_ADMIN
+                    config.duplicate_role("ROLE_USER", "ROLE_ADMIN")
+            # Enable LDAP
+            config.enable_ldap(ldap_address, ldap_port, ldap_domain,
+                               ldap_username, ldap_password,
+                               filter_user, filter_role,
+                               items["uid"], role)
 
         # If asked to save or print the modifications
         for param in ["pretty_print", "save"]:
@@ -794,7 +1028,12 @@ def main():
             else:
                 plugin.disable(not options.save)
                 plugin.enable(not options.save)
+
+
+
+
     print "#" * 80
+
 
 
 if __name__ == "__main__":

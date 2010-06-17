@@ -159,7 +159,8 @@ REMOVE_PREVIOUS_SNMP_CREDENTIALS = True
 SNMP_CREDENTIALS = [
     {'community': 'public', 'version': 'v2c'},
     {'community': 'public', 'begin': '192.168.0.10', 'end': '192.168.0.19', 'version': 'v1'},
-    {'community': 'private', 'begin': '172.16.1.13'},
+    {'community': 'private', 'begin': '192.168.1.13'},
+    {'community': 'private', 'begin': '192.168.1.37'},
 ]
 
 ################################################################################
@@ -198,3 +199,36 @@ WMI_CREDENTIALS = [
 #
 # One plugin name must be equal to his python filename in the plugins directory.
 PLUGINS = ["apache",  "nginx"]
+
+################################################################################
+# Add LDAP uers to the default configuration
+#
+# LDAP_USERNAME and LDAP_PASSWORD define creditentials for searching in LDAP.
+#
+# LDAP_USERS_KEYS is used to populate OpenNMS database from LDAP.
+# It contains relation between OpenNMS User (see USERS above) and attribute
+# from an LDAP entry:
+#   {'opennms_user_attr1': 'ldap_attr1', 'opennms_user_attr2': 'ldap_attr2'}
+#
+# LDAP_USERS_GROUP and LDAP_USERS_PASSWORD are the group and password assigned
+# to all LDAP users.
+#
+# LDAP_DOMAIN is the distinguished name to use as the search base.
+#
+# LDAP_FILTER_USER is the organizational unit where the users are stored.
+#
+# LDAP_FILTER_ROLE is the common name wich users must be member of to login.
+#
+
+LDAP_ADDRESS = '192.168.0.2'
+LDAP_PORT = 389
+LDAP_USERNAME = 'adsearch'
+LDAP_PASSWORD = 'secret'
+LDAP_USERS_KEYS = {'uid': 'sAMAccountName', 'name': 'cn', 'mail': 'mail'}
+LDAP_USERS_GROUP = 'Admins'
+LDAP_USERS_PASSWORD = 'secret'
+LDAP_USERS_READ_ONLY = False
+
+LDAP_DOMAIN = 'dc=example,dc=com'
+LDAP_FILTER_USER = 'ou=IT,ou=Example'
+LDAP_FILTER_ROLE = 'cn=OpenNMS'
