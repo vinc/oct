@@ -134,7 +134,8 @@ def main():
     opennms_repo_version = \
         version if version != "" and distribution == "debian" \
         else lib.distrib.query_version("opennms")
-    if lib.system.cmp_version(opennms_repo_version, opennms_script_version):
+    if lib.system.cmp_version(opennms_repo_version, 
+                              params.opennms_script_version):
         print ""
         print >> sys.stderr, \
                  "Warning: this script was written for OpenNMS " \
@@ -219,8 +220,8 @@ def main():
     print ""
     print "Creating OpenNMS's database..."
     try:
-        lib.system.create_database("opennms", opennms_db_username,
-                                   opennms_db_password)
+        lib.system.create_database("opennms", params.opennms_db_username,
+                                   params.opennms_db_password)
     except psycopg2.OperationalError, e:
         #print >> sys.stderr, e # Could not connect, exit
         sys.exit(e)

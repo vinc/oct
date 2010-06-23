@@ -19,6 +19,8 @@ You should have received a copy of the GNU General Public License
 along with OpenNMS Configuration Tools. If not, see <http://www.gnu.org/licenses/>.
 """
 
+from __future__ import with_statement
+
 # Standard library
 import fileinput
 import optparse
@@ -38,7 +40,7 @@ try:
 except:
     import md5
 
-# This file is the ternary operator from Python 2.5.0
+# This file need the ternary operator from Python 2.5.0
 assert sys.version_info[:3] >= (2, 5, 0)
 
 def add_to_admins(filename, username):
@@ -756,7 +758,116 @@ class Authentification(XMLConfig):
         prop.setAttribute("name", "defaultRole")
         prop.setAttribute("value", default_role)
 
+class Mail(XMLConfig):
+    def add(self, name, server, address, username, password):
+        """
+        Configure JavaMail with the following parameters:
+            
+        """
 
+        if self.verbosity > 1:
+            print "\tConfiguring Mail ..."
+
+        self._doc.firstChild.setAttribute("default-read-config-name", name)
+        self._doc.firstChild.setAttribute("default-send-config-name", name)
+
+        for config in self._doc.getElementsByTagName("sendmail-config"):
+            if config.getAttribute("name") == name:
+                self._config.removeChild(config)
+        sendmail_config = self._doc.createElement("sendmail-config")
+        self._config.appendChild(sendmail_config)
+        sendmail_config.setAttribute("name", name)
+        sendmail_config.setAttribute("attempt-interval", "3000")
+        sendmail_config.setAttribute("use-authentication", "false")
+        sendmail_config.setAttribute("use-jmta", "false")
+        sendmail_config.setAttribute("debug", "false")
+
+        sendmail_host = self._doc.createElement("sendmail-host")
+        sendmail_config.appendChild(sendmail_host)
+        sendmail_host.setAttribute("host", server)
+        sendmail_host.setAttribute("port", "25")
+
+        sendmail_protocol = self._doc.createElement("sendmail-protocol")
+        sendmail_config.appendChild(sendmail_protocol)
+        sendmail_protocol.setAttribute("char-set", "utf-8")
+        sendmail_protocol.setAttribute("mailer", "smtpsend")
+        sendmail_protocol.setAttribute("message-content-type", "text/plain")
+        sendmail_protocol.setAttribute("message-encoding", "7-bit")
+        sendmail_protocol.setAttribute("quit-wait", "true")
+        sendmail_protocol.setAttribute("ssl-enable", "false")
+        sendmail_protocol.setAttribute("start-tls", "false")
+        sendmail_protocol.setAttribute("transport", "smtp")
+                     
+        sendmail_message = self._doc.createElement("sendmail-message")
+        sendmail_config.appendChild(sendmail_message)
+        sendmail_message.setAttribute("to", "user@example.org")
+        sendmail_message.setAttribute("from", "user@example.org")
+        sendmail_message.setAttribute("subject", "OpenNMS Test Message")
+        sendmail_message.setAttribute("body", "This is an OpenNMS test message.")
+
+        user_auth = self._doc.createElement("user-auth")
+        sendmail_config.appendChild(user_auth)
+        user_auth.setAttribute("user-name", username)
+        user_auth.setAttribute("password", password)
+
+        for config in self._doc.getElementsByTagName("readmail-config"):
+            if config.getAttribute("name") == name:
+                self._config.removeChild(config)
+        readmail_config = self._doc.createElement("readmail-config")
+        self._config.appendChild(readmail_config)
+        readmail_config.setAttribute("name", name)
+        readmail_config.setAttribute("attempt-interval", "1000")
+        readmail_config.setAttribute("delete-all-mail", "false")
+        readmail_config.setAttribute("mail-folder", "INBOX")
+        readmail_config.setAttribute("debug", "true")
+
+        javamail_property = self._doc.createElement("javamail-property")
+        readmail_config.appendChild(javamail_property)
+        javamail_property.setAttribute("name", "mail.pop3.apop.enable")
+        javamail_property.setAttribute("value", "false")
+
+        javamail_property = self._doc.createElement("javamail-property")
+        readmail_config.appendChild(javamail_property)
+        javamail_property.setAttribute("name", "mail.pop3.rsetbeforequit")
+        javamail_property.setAttribute("value", "false")
+
+        readmail_host = self._doc.createElement("readmail-host")
+        readmail_config.appendChild(readmail_host)
+        readmail_host.setAttribute("host", server)
+        readmail_host.setAttribute("port", "143")
+
+        readmail_protocol = self._doc.createElement("readmail-protocol")
+        readmail_host.appendChild(readmail_protocol)
+        readmail_protocol.setAttribute("ssl-enable", "false")
+        readmail_protocol.setAttribute("start-tls", "false")
+        readmail_protocol.setAttribute("transport", "pop3")
+
+        user_auth = self._doc.createElement("user-auth")
+        readmail_config.appendChild(user_auth)
+        user_auth.setAttribute("user-name", username)
+        user_auth.setAttribute("password", password)
+        
+        for config in self._doc.getElementsByTagName("end2end-mail-config"):
+            self._config.removeChild(config)
+        end2end_mail_config = self._doc.createElement("end2end-mail-config")
+        self._config.appendChild(end2end_mail_config)
+        end2end_mail_config.setAttribute("readmail-config-name", name)
+        end2end_mail_config.setAttribute("sendmail-config-name", name)
+        end2end_mail_config.setAttribute("name", "default")
+
+        admin_conf = "%s/javamail-configuration.properties" \
+                     % os.path.dirname(self._xml_file)
+        if self.verbosity > 1:
+            print "\tConfiguring .properties file ..."       
+        with open(admin_conf, 'w') as f:
+            f.write("org.opennms.core.utils.fromAddress=%s\n" % address)
+            f.write("org.opennms.core.utils.mailHost=%s\n" % server)
+            f.write("org.opennms.core.utils.useJMTA=false\n")
+            f.write("org.opennms.core.utils.authenticate=false\n")
+            f.write("org.opennms.core.utils.messageContentType=text/plain\n")
+            f.write("org.opennms.core.utils.charset=utf-8\n")
+        f.close()
+        
 ##########################################
 #             Main Function              #
 ##########################################
@@ -808,13 +919,11 @@ def main():
         if not re.match("^[yY]([eE][sS])?$", rep):
             sys.exit(os.EX_OK)
 
-    """
     if (options.save or options.remove) and os.geteuid():
         print >> sys.stderr, \
         "Error: you cannot perform this operation unless you are root."
         exit(os.EX_NOPERM)
-    """
-
+    
     ##########################################
     #         Parse 'config_rules.py'        #
     ##########################################
@@ -864,17 +973,23 @@ def main():
         "capabilities": "capsd-configuration.xml",
         "snmp_credentials": "snmp-config.xml",
         "wmi_credentials": "wmi-config.xml",
-        "authentification": "applicationContext-spring-security.xml"
+        "authentification": "applicationContext-spring-security.xml",
+        "mail": "javamail-configuration.xml",
     }
 
+    is_def = lambda conf, var: hasattr(conf, str(var))
     ldap_vars = [
         "LDAP_ADDRESS", "LDAP_PORT", "LDAP_USERNAME", "LDAP_PASSWORD",
         "LDAP_USERS_KEYS", "LDAP_USERS_GROUP",
         "LDAP_USERS_PASSWORD", "LDAP_USERS_READ_ONLY",
         "LDAP_DOMAIN", "LDAP_FILTER_USER", "LDAP_FILTER_ROLE",
-    ]
-    is_def = lambda conf, var: hasattr(conf, str(var))
+    ]    
     is_ldap_enabled = lambda c: not False in [is_def(c, v) for v in ldap_vars]
+    mail_vars = [
+        "MAIL_NAME", "MAIL_SERVER", "MAIL_ADDRESS", 
+        "MAIL_USERNAME", "MAIL_PASSWORD"
+    ]    
+    is_mail_enabled = lambda c: not False in [is_def(c, v) for v in mail_vars]
 
     # Apply modifications listed in 'config_rules.py'
     print "#" * 80
@@ -894,7 +1009,9 @@ def main():
 
         # Call its methods for specifics elements defined in 'config_rules.py'
         if key in ["users", "groups", "roles", "snmp_credentials",
-                   "wmi_credentials"]:
+                   "wmi_credentials", "mail"]:
+            # TODO if groups or mail backup file.properties and restore it 
+            # after if option save is not set. Remove the backup in the end.
             if hasattr(config_rules, "REMOVE_PREVIOUS_%s" % key.upper()):
                 if getattr(config_rules, "REMOVE_PREVIOUS_%s" % key.upper()):
                     if options.verbosity > 2:
@@ -962,6 +1079,13 @@ def main():
                        elem['name'] == ldap_group:
                            elem['users'].extend(ldap_group_users)
                     config.add(**elem)
+            if key == "mail":
+                name = getattr(config_rules, "MAIL_NAME")
+                server = getattr(config_rules, "MAIL_SERVER")
+                address = getattr(config_rules, "MAIL_ADDRESS")
+                username = getattr(config_rules, "MAIL_USERNAME")
+                password = getattr(config_rules, "MAIL_PASSWORD")
+                config.add(name, server, address, username, password)
 
         elif key == "notification":
             config.status = getattr(config_rules, key.upper())
@@ -1029,18 +1153,7 @@ def main():
                 plugin.disable(not options.save)
                 plugin.enable(not options.save)
 
-
-
-
-    print "#" * 80
-
-
-
 if __name__ == "__main__":
-
-    ##########################################
-    #              Fixed options             #
-    ##########################################
 
     main()
     sys.exit(os.EX_OK)

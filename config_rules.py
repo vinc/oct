@@ -232,3 +232,19 @@ LDAP_USERS_READ_ONLY = False
 LDAP_DOMAIN = 'dc=example,dc=com'
 LDAP_FILTER_USER = 'ou=IT,ou=Example'
 LDAP_FILTER_ROLE = 'cn=OpenNMS'
+
+################################################################################
+# Configure Mail notification
+#
+# MAIL_NAME is the name of this configuration.
+#
+# MAIL_SERVER should be an IP address or the DNS name of the mail server.
+#
+# MAIL_ADDRESS is the mail address given to OpenNMS readable with MAIL_USERNAME
+# and MAIL_PASSWORD credentials.
+#
+MAIL_NAME = "example"
+MAIL_SERVER = "mail.example.com"
+MAIL_ADDRESS = "opennms@example.com"
+MAIL_USERNAME = "opennms"
+MAIL_PASSWORD = "secret"
