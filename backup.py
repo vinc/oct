@@ -105,7 +105,7 @@ def main():
     if options.verbosity > 0:
         print
     print "Backup OpenNMS directory..."
-    os.chdir("%s/.." % options.opennms_path)
+    os.chdir(lib.system.get_parent_dir(options.opennms_path))
     cmd = ["/bin/tar", "--create", "--gzip", "--file",
            "%s/files.tar.gz" % files_path, "opennms"]
     if options.verbosity > 0:
@@ -116,9 +116,9 @@ def main():
     if options.verbosity > 0:
         print
     print "Backup OpenNMS configuration directory..."
-    os.chdir("%s/.." % options.opennms_config_path)
-    cmd = ["/bin/tar", "--create", "--gzip", "--file",
-           "%s/config_files.tar.gz" % files_path, "opennms"]
+    os.chdir(lib.system.get_parent_dir(options.opennms_config_path))
+    cmd = ["/bin/tar", "--create", "--gzip", "--dereference", "--file",
+           "%s/config_files.tar.gz" % files_path, "etc"]
     if options.verbosity > 0:
         cmd.extend(["--verbose"])
     lib.system.exec_cmd(cmd, None, False, options.verbosity)

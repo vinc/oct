@@ -84,9 +84,7 @@ def main():
     if not os.path.isfile("%s/files.tar.gz" % backup_path):
         sys.exit("Cannot open directory '%s/files.tar.gz': " \
                  "No such file or directory" % backup_path)
-    parent_level = len(options.opennms_path.split("/")) - 1
-    parent_dir = "/".join(options.opennms_path.split("/")[:parent_level])
-    os.chdir(parent_dir)
+    os.chdir(lib.system.get_parent_dir(options.opennms_path))
     cmd = ["/bin/tar", "--extract", "--gzip", "--file",
            "%s/files.tar.gz" % backup_path]
     if options.verbosity > 0:
@@ -100,9 +98,7 @@ def main():
     if not os.path.isfile("%s/config_files.tar.gz" % backup_path):
         sys.exit("Cannot open directory '%s/config_files.tar.gz': " \
                  "No such file or directory" % backup_path)
-    parent_level = len(options.opennms_config_path.split("/")) - 1
-    parent_dir = "/".join(options.opennms_config_path.split("/")[:])
-    os.chdir(parent_dir)
+    os.chdir(lib.system.get_parent_dir(options.opennms_config_path))
     cmd = ["/bin/tar", "--extract", "--gzip", "--file",
            "%s/config_files.tar.gz" % backup_path]
     if options.verbosity > 0:
@@ -117,9 +113,8 @@ def main():
         lib.system.drop_database(options.database_name,
                                  options.database_username,
                                  options.database_password)
-    except: # If database does not exist... Not pretty!
+    except:
         raise
-        #pass
     lib.system.create_database(options.database_name,
                                options.database_username,
                                options.database_password)

@@ -140,7 +140,10 @@ def backup(filename):
     shutil.copy2(filename, backupname)
     return backupname
 
-
+def get_parent_dir(path):
+    parent_level = len(path.split("/")) - 1
+    return "/".join(path.split("/")[:parent_level])
+    
 def cmp_version(str_first, str_second):
     """
     Compare two string containing a package or software version number defined
