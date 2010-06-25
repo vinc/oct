@@ -185,6 +185,7 @@ class OpenNMSState(object):
         Return the result of the given regex on the given uri
         """
         # Build the HTTP request
+        #print "GET '%s%s'" % (params.opennms_webgui_url, uri)
         req = lib.system.request_url(params.opennms_webgui_url + uri,
                                      params.opennms_webgui_username,
                                      params.opennms_webgui_password)
@@ -224,7 +225,8 @@ class OpenNMSState(object):
         the given filename
         """
         try:
-            doc = xml.dom.minidom.parse(opennms_config_path + filename)
+            doc = xml.dom.minidom.parse("%s/%s" % (params.opennms_config_path, 
+                                                   filename))
         except IOError, e:
             print >> sys.stderr, e
         except:
@@ -250,22 +252,22 @@ class OpenNMSState(object):
             "admin/userGroupView/users/list.jsp",
             "[ \t]+<div id=\"users\((?P<users>\w+)\).fullName", "users", True))
         self.webgui_groups = int(self.extract_from_uri(
-            "admin/userGroupView/groups/list.jsp",
+            "admin/userGroupView/groups/list.htm",
             "[ \t]+<a href=\"javascript:detailGroup\('(?P<groups>\w+)'\)\">",
             "groups", True))
         # Collect infos from database
         try:
-            import psycopg2 as dbapi2
+            import psycopg2 as db2
         except ImportError:
             print >> sys.stderr, \
                 "Module psycopg2 must be installed for collecting the" \
                 "configuration state!"
             sys.exit(os.EX_UNAVAILABLE)
         try:
-            db = dbapi2.connect(database=opennms_db_database,
-                                user=opennms_db_username,
-                                password=opennms_db_password)
-        except dbapi2.DatabaseError, e:
+            db = db2.connect(database = params.opennms_db_name,
+                             user = params.opennms_db_username,
+                             password = params.opennms_db_password)
+        except db2.DatabaseError, e:
             print >> sys.stderr, e
             sys.exit(os.EX_IOERR)
         self.db_nodes = self.count_from_db(db, "node")

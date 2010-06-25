@@ -762,8 +762,13 @@ class Mail(XMLConfig):
     def add(self, name, server, address, username, password):
         """
         Configure JavaMail with the following parameters:
-            
+            name:       name given to this configuration
+            server:     mail server's address or name (SMTP+POP3 at the time)
+            address:    OpenNMS mail account's address
+            username:   OpenNMS mail account's username
+            password:   OpenNMS mail account's password
         """
+        # TODO: add parameters to allow a more flexible configuration
 
         if self.verbosity > 1:
             print "\tConfiguring Mail ..."

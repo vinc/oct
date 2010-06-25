@@ -20,6 +20,7 @@ along with OpenNMS Configuration Tools. If not, see <http://www.gnu.org/licenses
 
 import sys
 import lib.distrib
+import config_rules
 
 ################################################################################
 # OpenNMS static parameters
@@ -36,6 +37,10 @@ opennms_db_password = ""
 opennms_webgui_url = "http://localhost:8980/opennms/"
 opennms_webgui_username = "admin"
 opennms_webgui_password = "admin"
+if hasattr(config_rules, "USERS"):
+    for user in getattr(config_rules, "USERS"):
+        if user["uid"] == "admin":
+            opennms_webgui_password = user["pwd"]
 
 # Files path
 opennms_path = "/usr/share/opennms"
