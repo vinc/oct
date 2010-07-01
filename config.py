@@ -330,6 +330,7 @@ class Collector(XMLConfig):
     This class allow checking the status of SNMP and WMI protocols used by
     OpenNMS to collect informations about the network.
     """
+    
     def get_protocol_status(self, protocol):
         """ Generic method to get the status of the given protocol """
         assert self._doc.getElementsByTagName("package").length == 1
@@ -347,6 +348,34 @@ class Collector(XMLConfig):
             if self.verbosity > 1:
                 print "\tSetting %s status to '%s' ..." % (protocol, status)
             service.setAttribute("status", status)
+            if self.get_thresholding_status(protocol):
+                parameter = self._doc.createElement("parameter")
+                service.appendChild(parameter)
+                parameter.setAttribute("key", "thresholding-enabled")
+                parameter.setAttribute("value", "true")
+                if self.verbosity > 1:
+                    print "\tEnabling %s thresholding ..." % protocol
+
+    def get_thresholding_status(self, protocol):
+        """ Return protocol thresholding's status """
+        thresh = "_%s_thresholding" % protocol.lower()
+        return getattr(self, thresh) if hasattr(self, thresh) else False
+    def set_thresholding_status(self, protocol, value):
+        """ Set protocol thresholding's status """
+        thresh = "_%s_thresholding" % protocol.lower()
+        setattr(self, thresh, value)
+
+    def get_snmp_thresholding(self):
+        return self.get_thresholding_status("snmp")
+    def set_snmp_thresholding(self, value):
+        self.set_thresholding_status("snmp", value)
+    snmp_thresholding = property (get_snmp_thresholding, set_snmp_thresholding)
+    
+    def get_wmi_thresholding(self):
+        return self.get_thresholding_status("wmi")
+    def set_wmi_thresholding(self, value):
+        self.set_thresholding_status("wmi", value)
+    wmi_thresholding = property (get_wmi_thresholding, set_wmi_thresholding)
 
     """ SNMP getters and setters """
     def get_snmp(self):
@@ -1096,19 +1125,29 @@ def main():
 
         elif key == "notification":
             config.status = getattr(config_rules, key.upper())
+            
         elif key == "collector":
             for proto in ["snmp", "wmi"]:
+                # Enable SNMP or WMI thresholding
+                thresholding = "%s_THRESHOLDING" % proto.upper()
+                if hasattr(config_rules, thresholding):
+                    setattr(config, thresholding.lower(), 
+                            getattr(config_rules, thresholding))
+                # Enable SNMP or WMI data collection
                 if hasattr(config_rules, proto.upper()):
                     setattr(config, proto, getattr(config_rules, proto.upper()))
+
         elif key == "capabilities":
             if hasattr(config_rules, "WMI") and getattr(config_rules, "WMI"):
                 getattr(config, "add_wmi")()
+                
         elif key == "discovery":
             for action in ["include_ranges", "exclude_ranges", "add_addresses"]:
                 config_param = action.upper()
                 if hasattr(config_rules, config_param):
                     for elem in getattr(config_rules, config_param):
                         getattr(config, action.split("_")[0])(**elem)
+                        
         elif key == "authentification" and is_ldap_enabled(config_rules):
             ldap_address = getattr(config_rules, "LDAP_ADDRESS")
             ldap_port = getattr(config_rules, "LDAP_PORT")

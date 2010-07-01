@@ -137,8 +137,9 @@ EXCLUDE_RANGES = [
 #   True | False
 #
 NOTIFICATION = True
-SNMP = True
 WMI = True
+SNMP = True
+SNMP_THRESHOLDING = True
 
 ################################################################################
 # Add SNMP credentials to the default configuration
