@@ -935,7 +935,7 @@ def main():
 
     # Import user configuration defined in 'config_rules.py'
     import config_rules
-
+    
     errors_detected = 0
     print_error = lambda l, n, t: "Error in %s: '%s' is not a valid %s!" \
                                   % (l, n, t)
@@ -1035,7 +1035,8 @@ def main():
                    try:
                        import ldap
                    except ImportError:
-                       sys.exit("Error: You must have 'python-ldap' on your system!")
+                       sys.exit("Error: You must have 'python-ldap' on your " \
+                                "system!")
                    ldap_address = getattr(config_rules, "LDAP_ADDRESS")
                    ldap_port = getattr(config_rules, "LDAP_PORT")
                    ldap_username = getattr(config_rules, "LDAP_USERNAME")
@@ -1044,11 +1045,12 @@ def main():
                    filter_user = getattr(config_rules, "LDAP_FILTER_USER")
                    items = getattr(config_rules, "LDAP_USERS_KEYS")
                    ldap_group = getattr(config_rules, "LDAP_USERS_GROUP")
-                   l = ldap.initialize('ldap://%s:%s' % (ldap_address,
-                                       ldap_port))
+                   uri = 'ldap://%s:%s' % (ldap_address, ldap_port)
+                   l = ldap.initialize(uri)
                    l.bind(ldap_username, ldap_password)
-                   r = l.search_s("%s,%s" % (filter_user, ldap_domain), ldap.SCOPE_SUBTREE,
-                                  '(objectClass=*)', items.values())
+                   r = l.search_s("%s,%s" % (filter_user, ldap_domain), 
+                                  ldap.SCOPE_SUBTREE, '(objectClass=*)', 
+                                  items.values())
                    l.unbind()
                    handle = lambda entry, k: \
                        entry[k][0] if k in entry and len(entry[k]) == 1 \
@@ -1158,6 +1160,20 @@ def main():
                 plugin.disable(not options.save)
                 plugin.enable(not options.save)
 
+    if hasattr(config_rules, "PROCESS_WIN32"):
+        print "#" * 80
+        print "Adding Win32 service monitoring ..."
+        from plugins.win32 import Win32
+        for p in getattr(config_rules, "PROCESS_WIN32"):
+            process = Win32(options.configuration_path, p["name"], p["value"])
+            process.verbosity = options.verbosity
+            if options.remove:
+                process.disable(False)
+            else:
+                process.disable(not options.save)
+                process.enable(not options.save)
+                print "... for service '%s'" % p["name"]
+                
 if __name__ == "__main__":
 
     main()

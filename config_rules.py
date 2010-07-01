@@ -199,6 +199,9 @@ WMI_CREDENTIALS = [
 #
 # One plugin name must be equal to his python filename in the plugins directory.
 PLUGINS = ["apache",  "nginx"]
+PROCESS_WIN32 = [
+    {"name": "Server", "value": "Server"},
+]
 
 ################################################################################
 # Add LDAP uers to the default configuration
