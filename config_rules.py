@@ -200,7 +200,17 @@ WMI_CREDENTIALS = [
 #
 # One plugin name must be equal to his python filename in the plugins directory.
 PLUGINS = ["apache",  "nginx"]
-PROCESS_WIN32 = [
+PROCESS = [
+    {"name": "PostgreSQL", "value": "postgres"},
+    {"name": "Apache", "value": "apache2"},
+    {"name": "MySQL", "value": "mysqld"},
+    {"name": "SSH", "value": "sshd"},
+    {"name": "SendMail", "value": "sendmail"},
+    {"name": "Oracle", "value": "oracle"},
+    {"name": "VSFTP", "value": "vsftpd"},
+    {"name": "SMB", "value": "smbd"},
+]
+WIN32_SERVICES = [
     {"name": "Server", "value": "Server"},
 ]
 

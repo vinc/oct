@@ -49,13 +49,16 @@ def add_to_admins(filename, username):
     where filename is usualy "/etc/opennms/magic-users.properties".
     """
     role = "role.admin.users"
-    for line in fileinput.input(filename, inplace = 1):
-        if line[:len(role)] == role:
-            admins = line[len(role)+1:len(line)-1].replace(" ", "").split(",")
-            if not username in admins:
-                admins.append(username)
-                line = "%s=%s\n" % (role, ", ".join(admins))
-        sys.stdout.write(line)
+    try:
+        for line in fileinput.input(filename, inplace = 1):
+            if line[:len(role)] == role:
+                admins = line[len(role)+1:len(line)-1].replace(" ", "").split(",")
+                if not username in admins:
+                    admins.append(username)
+                    line = "%s=%s\n" % (role, ", ".join(admins))
+            sys.stdout.write(line)
+    except OSError, e:
+        sys.exit("%s: '%s'" % (e, filename))
 
 
 class XMLConfig(object):
@@ -1199,19 +1202,23 @@ def main():
                 plugin.disable(not options.save)
                 plugin.enable(not options.save)
 
-    if hasattr(config_rules, "PROCESS_WIN32"):
-        print "#" * 80
-        print "Adding Win32 service monitoring ..."
-        from plugins.win32 import Win32
-        for p in getattr(config_rules, "PROCESS_WIN32"):
-            process = Win32(options.configuration_path, p["name"], p["value"])
-            process.verbosity = options.verbosity
-            if options.remove:
-                process.disable(False)
-            else:
-                process.disable(not options.save)
-                process.enable(not options.save)
-                print "... for service '%s'" % p["name"]
+    for daemons in ["PROCESS", "WIN32_SERVICES"]:
+        if hasattr(config_rules, daemons):
+            print "#" * 80
+            print "Adding %s monitoring ..." % daemons.replace("_", " ").title()
+            lib_name = daemons.split("_")[0]
+            lib = "plugins.%s" % lib_name.lower()
+            __import__(lib)
+            for daemon in getattr(config_rules, daemons):
+                plugin = getattr(sys.modules[lib], lib_name.capitalize())(
+                    options.configuration_path, **daemon)
+                plugin.verbosity = options.verbosity
+                if options.remove:
+                    plugin.disable(False)
+                else:
+                    plugin.disable(not options.save)
+                    plugin.enable(not options.save)
+                    print "... for daemon '%s'" % daemon["name"]
                 
 if __name__ == "__main__":
 
