@@ -1187,38 +1187,33 @@ def main():
             if getattr(options, param):
                 getattr(config, param)()
 
-    if hasattr(config_rules, "PLUGINS"):
+    for plugin_type in ["PLUGINS", "PROCESS", "WIN32_SERVICES"]:
+        if not hasattr(config_rules, plugin_type):
+            continue
         print "#" * 80
-        print "Adding plugins ..."
-        for plugin_name in getattr(config_rules, "PLUGINS"):
-            lib = "plugins.%s" % plugin_name
+        print "Adding plugins ..." if plugin_type == "PLUGINS" else \
+              "Adding %s monitoring ..." % plugin_type.replace("_", " ").lower()
+        lib_name = plugin_type.split("_")[0]
+        lib = "plugins.%s" % lib_name.lower()
+        if not plugin_type == "PLUGINS":
             __import__(lib)
-            plugin = getattr(sys.modules[lib],
-                        plugin_name.capitalize())(options.configuration_path)
+        for plugin_name in getattr(config_rules, plugin_type):
+            if plugin_type == "PLUGINS":
+                lib_name = plugin_name
+                lib = "plugins.%s" % lib_name.lower()
+                __import__(lib)
+                plugin_name = {}
+            plugin = getattr(sys.modules[lib], lib_name.capitalize())(
+                options.configuration_path, **plugin_name)
             plugin.verbosity = options.verbosity
             if options.remove:
                 plugin.disable(False)
             else:
                 plugin.disable(not options.save)
                 plugin.enable(not options.save)
-
-    for daemons in ["PROCESS", "WIN32_SERVICES"]:
-        if hasattr(config_rules, daemons):
-            print "#" * 80
-            print "Adding %s monitoring ..." % daemons.replace("_", " ").title()
-            lib_name = daemons.split("_")[0]
-            lib = "plugins.%s" % lib_name.lower()
-            __import__(lib)
-            for daemon in getattr(config_rules, daemons):
-                plugin = getattr(sys.modules[lib], lib_name.capitalize())(
-                    options.configuration_path, **daemon)
-                plugin.verbosity = options.verbosity
-                if options.remove:
-                    plugin.disable(False)
-                else:
-                    plugin.disable(not options.save)
-                    plugin.enable(not options.save)
-                    print "... for daemon '%s'" % daemon["name"]
+                if not plugin_type == "PLUGINS":
+                    print "... for daemon '%s'" % plugin_name["name"]
+        
                 
 if __name__ == "__main__":
 
