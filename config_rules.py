@@ -213,6 +213,10 @@ PROCESS = [
 WIN32_SERVICES = [
     {"name": "Server", "value": "Server"},
 ]
+#TODO add "specific" parameter
+ORACLE_INSTANCE_LINUX = [
+    {"name": "Database", "value": "ora_pmon_DATABASE"},
+]
 
 ################################################################################
 # Add LDAP uers to the default configuration
