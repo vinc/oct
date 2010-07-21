@@ -199,7 +199,7 @@ WMI_CREDENTIALS = [
 # Add a list of plugin to the default configuration
 #
 # One plugin name must be equal to his python filename in the plugins directory.
-PLUGINS = ["apache",  "nginx", "syslog", "ldap"]
+PLUGINS = ["apache",  "nginx", "syslog", "ldap", "mail"]
 PROCESS = [
     {"name": "PostgreSQL", "value": "postgres"},
     {"name": "Apache", "value": "apache2"},
