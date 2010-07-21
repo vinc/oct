@@ -242,9 +242,11 @@ def main():
     print "Configuring JRE..."
     lib.system.exec_cmd(["%s/bin/runjava" % opennms_path, "-s"])
 
-    print ""
-    print "Fix a bug in OpenNMS Unstable installer for Debian..."
-    if distribution == "debian" and options.repository == "unstable":
+    #if distribution == "debian" and options.repository == "unstable":
+    if distribution == "debian" and lib.system.cmp_version(opennms_repo_version,
+                                                           "1.7.92"):
+        print ""
+        print "Fix a bug in OpenNMS Unstable installer for Debian..."
         # Bug with the installer, 'plpgsql' language doesn't exist in
         # OpenNMS database.
         try:

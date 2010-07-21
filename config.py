@@ -1040,7 +1040,7 @@ def main():
         if options.verbosity > 0:
             print "Editing '%s' ..." % config_file
         root_name = "beans:beans" if key == "authentification" \
-                            else xml_config_files[key].split(".")[0]
+                                  else xml_config_files[key].split(".")[0]
         config = globals()[key.title().replace("_", "")](config_file, root_name)
         config.verbosity = options.verbosity
 
@@ -1103,9 +1103,9 @@ def main():
                                    print "\tFound LDAP user '%s' ..." \
                                          % elem['uid']
                                elem['pwd'] = getattr(config_rules,
-                                                   "LDAP_USERS_PASSWORD")
+                                                     "LDAP_USERS_PASSWORD")
                                elem['ro'] = getattr(config_rules,
-                                                   "LDAP_USERS_READ_ONLY")
+                                                    "LDAP_USERS_READ_ONLY")
                                config.add(**elem)
                            elif key == "groups":
                                # Populate the ldap default group
@@ -1187,13 +1187,14 @@ def main():
             if getattr(options, param):
                 getattr(config, param)()
 
-    for plugin_type in ["PLUGINS", "PROCESS", "WIN32_SERVICES"]:
+    for plugin_type in ["PLUGINS", "PROCESS", "WIN32_SERVICES", 
+                        "ORACLE_INSTANCE_LINUX"]:
         if not hasattr(config_rules, plugin_type):
             continue
         print "#" * 80
         print "Adding plugins ..." if plugin_type == "PLUGINS" else \
               "Adding %s monitoring ..." % plugin_type.replace("_", " ").lower()
-        lib_name = plugin_type.split("_")[0]
+        lib_name = plugin_type #.split("_")[0]
         lib = "plugins.%s" % lib_name.lower()
         if not plugin_type == "PLUGINS":
             __import__(lib)
@@ -1203,7 +1204,7 @@ def main():
                 lib = "plugins.%s" % lib_name.lower()
                 __import__(lib)
                 plugin_name = {}
-            plugin = getattr(sys.modules[lib], lib_name.capitalize())(
+            plugin = getattr(sys.modules[lib], lib_name.title())(
                 options.configuration_path, **plugin_name)
             plugin.verbosity = options.verbosity
             if options.remove:
