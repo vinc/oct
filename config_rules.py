@@ -199,7 +199,7 @@ WMI_CREDENTIALS = [
 # Add a list of plugin to the default configuration
 #
 # One plugin name must be equal to his python filename in the plugins directory.
-PLUGINS = ["apache",  "nginx"]
+PLUGINS = ["apache",  "nginx", "syslog"]
 PROCESS = [
     {"name": "PostgreSQL", "value": "postgres"},
     {"name": "Apache", "value": "apache2"},
@@ -234,18 +234,18 @@ WIN32_SERVICES = [
 # LDAP_FILTER_ROLE is the common name wich users must be member of to login.
 #
 
-LDAP_ADDRESS = '192.168.0.2'
-LDAP_PORT = 389
-LDAP_USERNAME = 'adsearch'
-LDAP_PASSWORD = 'secret'
-LDAP_USERS_KEYS = {'uid': 'sAMAccountName', 'name': 'cn', 'mail': 'mail'}
-LDAP_USERS_GROUP = 'Admins'
-LDAP_USERS_PASSWORD = 'secret'
-LDAP_USERS_READ_ONLY = False
+#LDAP_ADDRESS = '192.168.0.2'
+#LDAP_PORT = 389
+#LDAP_USERNAME = 'adsearch'
+#LDAP_PASSWORD = 'secret'
+#LDAP_USERS_KEYS = {'uid': 'sAMAccountName', 'name': 'cn', 'mail': 'mail'}
+#LDAP_USERS_GROUP = 'Admins'
+#LDAP_USERS_PASSWORD = 'secret'
+#LDAP_USERS_READ_ONLY = False
 
-LDAP_DOMAIN = 'dc=example,dc=com'
-LDAP_FILTER_USER = 'ou=IT,ou=Example'
-LDAP_FILTER_ROLE = 'cn=OpenNMS'
+#LDAP_DOMAIN = 'dc=example,dc=com'
+#LDAP_FILTER_USER = 'ou=IT,ou=Example'
+#LDAP_FILTER_ROLE = 'cn=OpenNMS'
 
 ################################################################################
 # Configure Mail notification
