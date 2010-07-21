@@ -24,9 +24,9 @@ from plugin import Plugin
 # file to clean remove the old plugin before installing the new version with
 # 'config.py --save'.
 
-class Syslog(Plugin):
+class Ldap(Plugin):
     def __init__(self, path):
-        super(Syslog, self).__init__(path)
+        super(Ldap, self).__init__(path)
 
         # List all modifications done to the configuration for this plugin.
         # 'self._list_xml_modifications' is a dict where each key is the name of
@@ -35,30 +35,34 @@ class Syslog(Plugin):
         #
         # {nodename1: filename1, nodename2: filename2}
         self._list_xml_modifications = {
-            "service": "service-configuration.xml",
-            "configuration": "syslogd-configuration.xml",
+            "protocol-plugin": "capsd-configuration.xml",
+            "service": "poller-configuration.xml",
+            "monitor": "poller-configuration.xml",
         }
         # Add a node 'protocol-plugin' to the file 'capsd-configuration.xml'
+        self._xml_protocol_plugin = """
+        <protocol-plugin protocol="LDAP" class-name="org.opennms.netmgt.capsd.plugins.LdapPlugin" scan="on">
+            <property key="port" value="389" />
+            <property key="timeout" value="3000" />
+            <property key="retry" value="2" />
+        </protocol-plugin>
+        """
+
+        # Add a node 'service' to the file 'collectd-configuration.xml'
         self._xml_service = """
-        <service>
-            <name>OpenNMS:Name=Syslogd</name>
-            <class-name>org.opennms.netmgt.syslogd.jmx.Syslogd</class-name>
-            <invoke at="start" pass="0" method="init"/>
-            <invoke at="start" pass="1" method="start"/>
-            <invoke at="status" pass="0" method="status"/>
-            <invoke at="stop" pass="0" method="stop"/>
+        <service name="LDAP" interval="300000" user-defined="false" status="on">
+          <parameter key="port" value="389" />
+          <parameter key="version" value="3" />
+          <parameter key="searchbase" value="DC=example,DC=com" />
+          <parameter key="searchfilter" value="OU=OpenNMS" />
+          <parameter key="dn" value="CN=usersearch" />
+          <parameter key="password" value="secret" />
+          <parameter key="retry" value="2" />
+          <parameter key="timeout" value="3000" />
         </service>
         """
 
         # Add a node 'service' to the file 'collectd-configuration.xml'
-        self._xml_configuration_replace_all = True
-        self._xml_configuration = """
-        <configuration
-            syslog-port="10514"
-            new-suspect-on-message="false"
-            forwarding-regexp="^((.+?) (.*))\n?$"
-            matching-group-host="2"
-            matching-group-message="3"
-            discard-uei="DISCARD-MATCHING-MESSAGES"
-            />
+        self._xml_monitor = """
+        <monitor service="LDAP" class-name="org.opennms.netmgt.poller.monitors.LdapMonitor"/>
         """

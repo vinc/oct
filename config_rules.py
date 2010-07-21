@@ -199,7 +199,7 @@ WMI_CREDENTIALS = [
 # Add a list of plugin to the default configuration
 #
 # One plugin name must be equal to his python filename in the plugins directory.
-PLUGINS = ["apache",  "nginx", "syslog"]
+PLUGINS = ["apache",  "nginx", "syslog", "ldap"]
 PROCESS = [
     {"name": "PostgreSQL", "value": "postgres"},
     {"name": "Apache", "value": "apache2"},
@@ -236,7 +236,7 @@ WIN32_SERVICES = [
 
 #LDAP_ADDRESS = '192.168.0.2'
 #LDAP_PORT = 389
-#LDAP_USERNAME = 'adsearch'
+#LDAP_USERNAME = 'usersearch'
 #LDAP_PASSWORD = 'secret'
 #LDAP_USERS_KEYS = {'uid': 'sAMAccountName', 'name': 'cn', 'mail': 'mail'}
 #LDAP_USERS_GROUP = 'Admins'
