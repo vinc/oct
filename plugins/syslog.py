@@ -25,7 +25,7 @@ from plugin import Plugin
 # 'config.py --save'.
 
 class Syslog(Plugin):
-    def __init__(self, path, server):
+    def __init__(self, path):
         super(Syslog, self).__init__(path)
 
         # List all modifications done to the configuration for this plugin.
@@ -51,6 +51,7 @@ class Syslog(Plugin):
         """ % vars()
 
         # Add a node 'service' to the file 'collectd-configuration.xml'
+        self._xml_configuration_replace_all = True
         self._xml_configuration = """
         <configuration
             syslog-port="10514"

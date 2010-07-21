@@ -74,26 +74,33 @@ class Plugin(object):
     def enable(self, simulate_only = True):
         print "Loading plugin '%s' ..." % self.__class__.__name__
         for node_name in self._list_xml_modifications.keys():
+            # Load the XML tree of the node content
+            node_ref = "_xml_%s" % node_name.replace("-", "_")
+            node_xml = getattr(self, node_ref)
+            doc_plugin = xml.dom.minidom.parseString(node_xml)
+            
             # Load the XML configuration tree
             xml_file = "%s/%s" % (self._path,
                                   self._list_xml_modifications[node_name])
             if self.verbosity > 1:
                 print "\tAdding node '%s' to '%s' ..." % (node_name, xml_file)
-
+                
             config = XMLFile.open(xml_file, "w")
 
             # Try to find the node's parent in it
             nodes = config.get_document().getElementsByTagName(node_name)
             if nodes.length:
                 parent = nodes.item(0).parentNode
+                # If the plugin need to replace all previous nodes
+                if hasattr(self, "%s_replace_all" % node_ref) and \
+                   getattr(self, "%s_replace_all" % node_ref) == True:
+                       for node in nodes:
+                           parent.removeChild(node)
             else:
                 parent = config.get_root()
-            # Load the XML tree of the node content
-            node_ref = "_xml_%s" % node_name.replace("-", "_")
-            node_xml = getattr(self, node_ref)
-            doc_plugin = xml.dom.minidom.parseString(node_xml)
+                
+            # Merge the node content with the configuration tree
             node = doc_plugin.getElementsByTagName(node_name).item(0)
-            # Merge it with the configuration tree
             parent.appendChild(node)
             if not simulate_only:
                 # Write the modifications
