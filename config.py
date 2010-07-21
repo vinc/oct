@@ -1188,7 +1188,7 @@ def main():
                 getattr(config, param)()
 
     for plugin_type in ["PLUGINS", "PROCESS", "WIN32_SERVICES", 
-                        "ORACLE_INSTANCE_LINUX"]:
+                        "ORACLE_INSTANCE_LINUX", "DATABASE"]:
         if not hasattr(config_rules, plugin_type):
             continue
         print "#" * 80
@@ -1212,7 +1212,9 @@ def main():
             else:
                 plugin.disable(not options.save)
                 plugin.enable(not options.save)
-                if not plugin_type == "PLUGINS":
+                if plugin_type == "DATABASE":
+                    print "... for '%s'" % plugin_name["database"]
+                elif not plugin_type == "PLUGINS":
                     print "... for daemon '%s'" % plugin_name["name"]
         
                 

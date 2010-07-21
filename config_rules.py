@@ -218,6 +218,13 @@ ORACLE_INSTANCE_LINUX = [
     {"name": "Database", "value": "ora_pmon_DATABASE"},
 ]
 
+#TODO documentation
+# link for every driver jar file
+# driver :   "mysql", "postgresql", or "oracle", default "mssql"
+DATABASE = [
+    {"database": "db_test", "username": "test", "password": "secret", "jdbc": "mysql"},
+]
+
 ################################################################################
 # Add LDAP uers to the default configuration
 #
