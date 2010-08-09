@@ -140,7 +140,7 @@ def main():
         print >> sys.stderr, \
                  "Warning: this script was written for OpenNMS " \
                  "version %s but you are installing version %s!" % \
-                 (opennms_script_version, opennms_repo_version)
+                 (params.opennms_script_version, opennms_repo_version)
         rep = raw_input("Continue anyway? [y/N] ")
         if not re.match("^[yY]([eE][sS])?$", rep):
             sys.exit(os.EX_OK)

@@ -28,15 +28,23 @@ class Database(Plugin):
     def __init__(self, path, database, username, password, jdbc = "mysql"):
         super(Database, self).__init__(path)
         driver = "org.gjt.mm.mysql.Driver" if jdbc == "mysql" else \
-                    "oracle.Driver" if jdbc == "oracle" else \
-                    "mssql.Driver" if jdbc == "mssql" else \
-                    "postgresql.Driver" # if jdbc == "postgresql"
+                 "oracle.jdbc.driver.OracleDriver" if jdbc == "oracle-9.0.2.4" else \
+                 "mssql.Driver" if jdbc == "mssql" else \
+                 "postgresql.Driver" # if jdbc == "postgresql"
                       
         port = "3306" if jdbc == "mysql" else \
-                  "1521" if jdbc == "oracle" else \
-                  "1433" if jdbc == "mssql" else \
-                  "5432" # if jdbc == "postgresql"
-                      
+               "1521" if jdbc == "oracle-9.0.2.4" else \
+               "1433" if jdbc == "mssql" else \
+               "5432" # if jdbc == "postgresql"
+               
+        name = "MySQL" if jdbc == "mysql" else \
+               "Oracle" if jdbc == "oracle-9.0.2.4" else \
+               "MSSQL" if jdbc == "mssql" else \
+               "PostgreSQL" # if jdbc == "postgresql"
+               
+        if jdbc == "oracle-9.0.2.4":
+            jdbc = "oracle:thin"
+            
         # List all modifications done to the configuration for this plugin.
         # 'self._list_xml_modifications' is a dict where each key is the name of
         # a node to add to a XML configuration file. The name of this file is
@@ -51,7 +59,7 @@ class Database(Plugin):
 
            # Add a node 'protocol-plugin' to the file 'capsd-configuration.xml'
         self._xml_protocol_plugin = """
-        <protocol-plugin protocol="Database-Connection-%(database)s" class-name="org.opennms.netmgt.capsd.plugins.JDBCPlugin" scan="on">
+        <protocol-plugin protocol="%(name)s-Connection-%(database)s" class-name="org.opennms.netmgt.capsd.plugins.JDBCPlugin" scan="on">
             <property key="user" value="%(username)s"/>
             <property key="password" value="%(password)s"/>
             <property key="retry" value="3"/>
@@ -59,10 +67,12 @@ class Database(Plugin):
             <property key="driver" value="%(driver)s"/>
             <property key="url" value="jdbc:%(jdbc)s://OPENNMS_JDBC_HOSTNAME:%(port)s/%(database)s"/>
         </protocol-plugin>
-        """ % vars()     
+        """ % vars()
+        #jdbc:oracle:thin:@OPENNMS_JDBC_HOSTNAME:%(port)s:%(database)
+        
         # Add a node 'service' to the file 'collectd-configuration.xml'
         self._xml_service = """
-        <service name="Database-Connection-%(database)s" user-defined="false" interval="6000" status="on">
+        <service name="%(name)s-Connection-%(database)s" user-defined="false" interval="6000" status="on">
             <parameter key="user" value="%(username)s"/>
             <parameter key="password" value="%(password)s"/>
             <parameter key="timeout" value="3000"/>
@@ -73,6 +83,6 @@ class Database(Plugin):
         
         # Add a node 'service' to the file 'collectd-configuration.xml'
         self._xml_monitor = """
-        <monitor service="Database-Connection-%(database)s" class-name="org.opennms.netmgt.poller.monitors.JDBCMonitor"/>
+        <monitor service="%(name)s-Connection-%(database)s" class-name="org.opennms.netmgt.poller.monitors.JDBCMonitor"/>
         """ % vars()
         
