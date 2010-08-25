@@ -41,7 +41,7 @@ class Win32_Services(Plugin):
         }
         # Add a node 'protocol-plugin' to the file 'capsd-configuration.xml'
         self._xml_protocol_plugin = """
-        <protocol-plugin protocol="%(name)s-Process"
+        <protocol-plugin protocol="%(name)s-Service"
             class-name="org.opennms.netmgt.capsd.plugins.Win32ServicePlugin"
             scan="on" user-defined="false">
             <property key="timeout" value="2000" />
@@ -52,7 +52,7 @@ class Win32_Services(Plugin):
 
         # Add a node 'service' to the file 'collectd-configuration.xml'
         self._xml_service = """
-        <service name="%(name)s-Process" interval="300000" 
+        <service name="%(name)s-Service" interval="300000" 
             user-defined="false" status="on">
             <parameter key="retry" value="2"/>
             <parameter key="timeout" value="2000"/>
@@ -63,6 +63,6 @@ class Win32_Services(Plugin):
 
         # Add a node 'service' to the file 'collectd-configuration.xml'
         self._xml_monitor = """
-        <monitor service="%(name)s-Process" 
+        <monitor service="%(name)s-Service" 
            class-name="org.opennms.netmgt.poller.monitors.Win32ServiceMonitor"/>
         """ % vars()
